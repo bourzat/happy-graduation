@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Graduate to Win! 🎓</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-   <style>
+    <style>
         body {
-            background: #0f172a;
+            /* Upgraded to a premium sleek radial spotlight background */
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
             color: #fff;
             font-family: 'Segoe UI', system-ui, sans-serif;
             text-align: center;
@@ -34,7 +35,7 @@
         .screen {
             position: absolute;
             z-index: 10;
-            background: rgba(15, 23, 42, 0.98);
+            background: transparent;
             width: 100%;
             height: 100%;
             display: flex;
@@ -46,34 +47,48 @@
         }
 
         h1 {
-            font-size: 2rem; /* Scaled down for mobile */
-            background: linear-gradient(to right, #fbbf24, #f59e0b);
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffe066, #f59e0b);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 30px rgba(245, 158, 11, 0.2);
         }
 
+        /* Upgraded button with matching premium Gold Theme */
         button {
-            background: #8b5cf6;
+            background: linear-gradient(45deg, #f59e0b, #d97706);
             color: white;
             border: none;
-            padding: 15px 40px;
+            padding: 16px 45px;
             font-size: 1.2rem;
             border-radius: 50px;
             cursor: pointer;
             font-weight: bold;
-            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+            box-shadow: 0 10px 25px rgba(217, 119, 6, 0.3);
+            transition: transform 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.98);
         }
 
         #hud {
             position: absolute;
-            top: 40px; /* Pushed down slightly to avoid iPhone notches */
-            font-size: 1.3rem;
+            top: 50px; /* Adjusted perfectly to avoid mobile camera punch holes/notches */
+            font-size: 1.2rem;
+            letter-spacing: 1px;
             font-weight: bold;
             z-index: 5;
             pointer-events: none;
             width: 100%;
             text-align: center;
+            background: rgba(255,255,255,0.1);
+            padding: 6px 0;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
         }
 
         #canvas {
@@ -87,13 +102,15 @@
         .hidden { display: none !important; }
 
         .note-card {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 20px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.06);
+            padding: 25px;
+            border-radius: 24px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             max-width: 90%;
             box-sizing: border-box;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
     </style>
 </head>
@@ -105,23 +122,38 @@
         <canvas id="canvas"></canvas>
 
         <div id="start-screen" class="screen">
-            <h1>The Graduation Dash! 🎓</h1>
-            <p style="font-size: 1.2rem; max-width: 400px; color: #94a3b8; margin-bottom: 30px;">
-                Catch the 🎓 to graduate! Avoid the ⏰ (8 AM classes are over!). Reach 100 points to unlock your surprise.
+            <h1>The Graduation Dash!</h1>
+            <p style="font-size: 1.1rem; max-width: 320px; color: #94a3b8; margin-top: 5px; margin-bottom: 30px; line-height: 1.6;">
+                Catch the 🎓 to graduate!<br>
+                Avoid the ⏰ (No more 8 AM classes).<br>
+                Score 100 points to unlock your note.
             </p>
-            <p style="color: #a78bfa; margin-bottom: 20px;">Use Left/Right Arrows or Click/Drag to move</p>
             <button onclick="startGame()">Start Game</button>
+            <p style="color: #64748b; font-size: 0.9rem; margin-top: 25px; font-weight: 500;">
+                ⚡ Drag your finger to move
+            </p>
         </div>
 
         <div id="victory-screen" class="screen hidden">
-            <h1>🎓 YOU GRADUATED! 🎓</h1>
+            <h1 style="font-size: 1.8rem;">🎓 DEGREES UNLOCKED! 🎓</h1>
             <div class="note-card">
-                <h2>To My Favorite Graduate,</h2>
-                <p style="font-size: 1.2rem; line-height: 1.6; text-align: left;">
-                    You officially caught enough diplomas to graduate! I am so incredibly proud of all the hard work, late nights, and dedication you put into getting here. 
+                <h2 style="margin-top: 5px; font-size: 1.6rem; color: #f59e0b; font-family: Georgia, serif; font-style: italic;">
+                    To My Habibty (حبيبتي),
+                </h2>
+                
+                <div style="font-size: 1.1rem; line-height: 1.8; text-align: center; color: #cbd5e1; margin: 20px 0; font-family: Georgia, serif;">
+                    <p style="margin: 5px 0;">The long nights are over, the pages are turned,</p>
+                    <p style="margin: 5px 0;">Celebrate every single lesson you've learned.</p>
+                    <p style="margin: 5px 0;">With endless brilliance and grace by your side,</p>
+                    <p style="margin: 5px 0;">You step into tomorrow, with absolute pride!</p>
+                </div>
+
+                <p style="font-size: 1.05rem; line-height: 1.6; text-align: left; color: #94a3b8; margin-bottom: 15px;">
+                    I have watched you work so hard, push through the stress, and conquer every obstacle to get to this stage. I am the proudest person in the room today.
                 </p>
-                <p style="font-size: 1.2rem; line-height: 1.6; text-align: left; color: #f472b6;">
-                    The future looks so bright with you in it. I love you! ❤️
+                
+                <p style="font-size: 1.1rem; line-height: 1.6; text-align: center; color: #f472b6; font-weight: 600; margin-bottom: 0;">
+                    Mabrouk, my love! The future is yours. ❤️
                 </p>
             </div>
         </div>
@@ -135,7 +167,6 @@
         let gameActive = false;
         let player, items;
 
-        // Resize canvas to fit screen
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -143,14 +174,13 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Game objects configuration
         function initGameObjects() {
             player = {
                 x: canvas.width / 2 - 40,
                 y: canvas.height - 100,
                 width: 80,
                 height: 50,
-                emoji: "🧺" // You can change this emoji!
+                emoji: "🧺"
             };
             items = [];
             score = 0;
@@ -158,7 +188,6 @@
         }
 
         // Controls
-        let touchX = null;
         window.addEventListener('keydown', (e) => {
             if (!gameActive) return;
             if (e.key === 'ArrowLeft') player.x = Math.max(0, player.x - 35);
@@ -178,7 +207,7 @@
 
         function spawnItem() {
             if (!gameActive) return;
-            const isCap = Math.random() > 0.3; // 70% chance for a graduation cap, 30% for alarm clock
+            const isCap = Math.random() > 0.3; 
             items.push({
                 x: Math.random() * (canvas.width - 40),
                 y: -40,
@@ -187,7 +216,7 @@
                 emoji: isCap ? "🎓" : "⏰",
                 type: isCap ? "good" : "bad"
             });
-            setTimeout(spawnItem, Math.random() * 600 + 400); // Spawn speed variation
+            setTimeout(spawnItem, Math.random() * 600 + 400); 
         }
 
         function startGame() {
@@ -204,7 +233,7 @@
             document.getElementById('hud').classList.add('hidden');
             document.getElementById('victory-screen').classList.remove('hidden');
 
-            // Awesome Continuous Confetti
+            // Festive Celebration Confetti
             var end = Date.now() + (6 * 1000);
             (function frame() {
                 confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 } });
@@ -227,18 +256,16 @@
                 let item = items[i];
                 item.y += item.speed;
 
-                // Draw item
                 ctx.font = "35px serif";
                 ctx.fillText(item.emoji, item.x, item.y);
 
-                // Collision detection
                 if (item.y >= player.y && item.y <= player.y + player.height &&
                     item.x >= player.x - 20 && item.x <= player.x + player.width) {
                     
                     if (item.type === "good") {
                         score += 10;
                     } else {
-                        score = Math.max(0, score - 15); // Hit by alarm clock! Lose points
+                        score = Math.max(0, score - 15); 
                     }
                     document.getElementById('score').innerText = score;
                     items.splice(i, 1);
@@ -250,7 +277,6 @@
                     continue;
                 }
 
-                // Remove missed items
                 if (item.y > canvas.height) {
                     items.splice(i, 1);
                 }
