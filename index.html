@@ -7,16 +7,14 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body {
-            /* Upgraded to a premium sleek radial spotlight background */
-            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            /* Fixed: Solid deep rich color removes the weird mobile browser tint */
+            background-color: #0f172a;
             color: #fff;
             font-family: 'Segoe UI', system-ui, sans-serif;
             text-align: center;
             margin: 0;
             overflow: hidden;
-            /* Prevents phone gestures like pulling down to refresh */
             overscroll-behavior-y: contain; 
-            /* Stops mobile browsers from highlighting things on double tap */
             touch-action: none; 
             -webkit-user-select: none;
             user-select: none;
@@ -35,7 +33,7 @@
         .screen {
             position: absolute;
             z-index: 10;
-            background: transparent;
+            background: #0f172a; /* Full solid overlay to prevent canvas bleed */
             width: 100%;
             height: 100%;
             display: flex;
@@ -47,17 +45,15 @@
         }
 
         h1 {
-            font-size: 2.2rem;
+            font-size: 2.4rem;
             font-weight: 800;
             letter-spacing: -0.5px;
             background: linear-gradient(135deg, #ffe066, #f59e0b);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 5px;
-            text-shadow: 0 0 30px rgba(245, 158, 11, 0.2);
+            margin-bottom: 15px;
         }
 
-        /* Upgraded button with matching premium Gold Theme */
         button {
             background: linear-gradient(45deg, #f59e0b, #d97706);
             color: white;
@@ -69,6 +65,7 @@
             font-weight: bold;
             box-shadow: 0 10px 25px rgba(217, 119, 6, 0.3);
             transition: transform 0.2s;
+            margin-top: 10px;
         }
 
         button:active {
@@ -77,18 +74,19 @@
 
         #hud {
             position: absolute;
-            top: 50px; /* Adjusted perfectly to avoid mobile camera punch holes/notches */
-            font-size: 1.2rem;
+            top: 50px; 
+            font-size: 1.3rem;
             letter-spacing: 1px;
             font-weight: bold;
             z-index: 5;
             pointer-events: none;
             width: 100%;
             text-align: center;
-            background: rgba(255,255,255,0.1);
-            padding: 6px 0;
+            background: rgba(30, 41, 59, 0.8);
+            padding: 10px 0;
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         #canvas {
@@ -123,10 +121,11 @@
 
         <div id="start-screen" class="screen">
             <h1>The Graduation Dash!</h1>
-            <p style="font-size: 1.1rem; max-width: 320px; color: #94a3b8; margin-top: 5px; margin-bottom: 30px; line-height: 1.6;">
-                Catch the 🎓 to graduate!<br>
-                Avoid the ⏰ (No more 8 AM classes).<br>
-                Score 100 points to unlock your note.
+            <p style="font-size: 1.1rem; max-width: 320px; color: #cbd5e1; margin-top: 5px; margin-bottom: 35px; line-height: 1.8; text-align: left; padding-left: 20px;">
+                🎓 Catch caps for <b>+10 pts</b><br>
+                ☕ Catch coffee for a massive <b>+25 pts</b><br>
+                ⏰ Avoid alarms! Dynamic deduction <b>-15 pts</b><br>
+                ✨ Reach 100 points to unlock your note!
             </p>
             <button onclick="startGame()">Start Game</button>
             <p style="color: #64748b; font-size: 0.9rem; margin-top: 25px; font-weight: 500;">
@@ -166,6 +165,62 @@
         let score = 0;
         let gameActive = false;
         let player, items;
+        let spawnTimer;
+
+        // Sound Effects Engine using Web Audio API (Built-in synthesizer so no external files are required!)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            // Ensure audio context is running (required by iOS/Android safari)
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'catch') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); // A5
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'coffee') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'alarm') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(110, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'win') {
+                // Happy fanfare
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, index) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.1);
+                    g.gain.setValueAtTime(0.2, audioCtx.currentTime + index * 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + index * 0.1 + 0.3);
+                    o.start(audioCtx.currentTime + index * 0.1);
+                    o.stop(audioCtx.currentTime + index * 0.1 + 0.3);
+                });
+            }
+        }
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
@@ -177,7 +232,7 @@
         function initGameObjects() {
             player = {
                 x: canvas.width / 2 - 40,
-                y: canvas.height - 100,
+                y: canvas.height - 120,
                 width: 80,
                 height: 50,
                 emoji: "🧺"
@@ -187,13 +242,7 @@
             document.getElementById('score').innerText = score;
         }
 
-        // Controls
-        window.addEventListener('keydown', (e) => {
-            if (!gameActive) return;
-            if (e.key === 'ArrowLeft') player.x = Math.max(0, player.x - 35);
-            if (e.key === 'ArrowRight') player.x = Math.min(canvas.width - player.width, player.x + 35);
-        });
-
+        // Seamless Drag/Touch Controls
         window.addEventListener('mousemove', (e) => {
             if (!gameActive) return;
             player.x = Math.min(canvas.width - player.width, Math.max(0, e.clientX - player.width / 2));
@@ -207,19 +256,37 @@
 
         function spawnItem() {
             if (!gameActive) return;
-            const isCap = Math.random() > 0.3; 
+            
+            const rand = Math.random();
+            let emoji = "🎓";
+            let type = "good";
+
+            if (rand < 0.25) {
+                emoji = "⏰";
+                type = "bad";
+            } else if (rand > 0.88) { // Rare Coffee Spawn
+                emoji = "☕";
+                type = "coffee";
+            }
+
             items.push({
                 x: Math.random() * (canvas.width - 40),
                 y: -40,
                 size: 40,
-                speed: Math.random() * 3 + 4,
-                emoji: isCap ? "🎓" : "⏰",
-                type: isCap ? "good" : "bad"
+                /* Optimized: Slipped item speed from 4-7 down to 2-4.5 for smooth control */
+                speed: Math.random() * 2.5 + 2, 
+                emoji: emoji,
+                type: type
             });
-            setTimeout(spawnItem, Math.random() * 600 + 400); 
+            
+            spawnTimer = setTimeout(spawnItem, Math.random() * 800 + 600); 
         }
 
         function startGame() {
+            // Wake up audio context on interaction
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
             gameActive = true;
@@ -230,10 +297,11 @@
 
         function triggerWin() {
             gameActive = false;
+            clearTimeout(spawnTimer);
+            playSound('win');
             document.getElementById('hud').classList.add('hidden');
             document.getElementById('victory-screen').classList.remove('hidden');
 
-            // Festive Celebration Confetti
             var end = Date.now() + (6 * 1000);
             (function frame() {
                 confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 } });
@@ -247,11 +315,11 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Basket / Player
+            // Render Basket
             ctx.font = "50px serif";
             ctx.fillText(player.emoji, player.x, player.y + 40);
 
-            // Update & Draw falling objects
+            // Item Engine
             for (let i = items.length - 1; i >= 0; i--) {
                 let item = items[i];
                 item.y += item.speed;
@@ -259,14 +327,21 @@
                 ctx.font = "35px serif";
                 ctx.fillText(item.emoji, item.x, item.y);
 
+                // Collision Detection Box
                 if (item.y >= player.y && item.y <= player.y + player.height &&
                     item.x >= player.x - 20 && item.x <= player.x + player.width) {
                     
                     if (item.type === "good") {
                         score += 10;
+                        playSound('catch');
+                    } else if (item.type === "coffee") {
+                        score += 25;
+                        playSound('coffee');
                     } else {
                         score = Math.max(0, score - 15); 
+                        playSound('alarm');
                     }
+                    
                     document.getElementById('score').innerText = score;
                     items.splice(i, 1);
 
