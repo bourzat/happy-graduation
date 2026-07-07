@@ -7,7 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body {
-            /* Fixed: Solid deep rich color removes the weird mobile browser tint */
             background-color: #0f172a;
             color: #fff;
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -33,7 +32,7 @@
         .screen {
             position: absolute;
             z-index: 10;
-            background: #0f172a; /* Full solid overlay to prevent canvas bleed */
+            background: #0f172a; 
             width: 100%;
             height: 100%;
             display: flex;
@@ -42,6 +41,7 @@
             justify-content: center;
             padding: 20px;
             box-sizing: border-box;
+            overflow-y: auto; 
         }
 
         h1 {
@@ -110,6 +110,26 @@
             box-sizing: border-box;
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; 
+            height: 0;
+            overflow: hidden;
+            border-radius: 14px;
+            margin-top: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
     </style>
 </head>
 <body>
@@ -134,8 +154,7 @@
         </div>
 
         <div id="victory-screen" class="screen hidden">
-            <h1 style="font-size: 1.8rem;">🎓 DEGREES UNLOCKED! 🎓</h1>
-            <div class="note-card">
+            <div class="note-card" style="margin-top: 20px; margin-bottom: 20px;">
                 <h2 style="margin-top: 5px; font-size: 1.6rem; color: #f59e0b; font-family: Georgia, serif; font-style: italic;">
                     To My Habibty (حبيبتي),
                 </h2>
@@ -150,8 +169,12 @@
                 <p style="font-size: 1.05rem; line-height: 1.6; text-align: left; color: #94a3b8; margin-bottom: 15px;">
                     I have watched you work so hard, push through the stress, and conquer every obstacle to get to this stage. I am the proudest person in the room today.
                 </p>
+
+                <div class="video-container">
+                    <iframe src="https://www.youtube.com/embed/450p7goxZqg" allowfullscreen></iframe>
+                </div>
                 
-                <p style="font-size: 1.1rem; line-height: 1.6; text-align: center; color: #f472b6; font-weight: 600; margin-bottom: 0;">
+                <p style="font-size: 1.1rem; line-height: 1.6; text-align: center; color: #f472b6; font-weight: 600; margin-top: 25px; margin-bottom: 0;">
                     Mabrouk, my love! The future is yours. ❤️
                 </p>
             </div>
@@ -167,11 +190,9 @@
         let player, items;
         let spawnTimer;
 
-        // Sound Effects Engine using Web Audio API (Built-in synthesizer so no external files are required!)
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function playSound(type) {
-            // Ensure audio context is running (required by iOS/Android safari)
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
@@ -183,8 +204,8 @@
 
             if (type === 'catch') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); // A5
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
                 gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
                 osc.start();
@@ -206,8 +227,7 @@
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.25);
             } else if (type === 'win') {
-                // Happy fanfare
-                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                const notes = [523.25, 659.25, 783.99, 1046.50];
                 notes.forEach((freq, index) => {
                     const o = audioCtx.createOscillator();
                     const g = audioCtx.createGain();
@@ -242,7 +262,6 @@
             document.getElementById('score').innerText = score;
         }
 
-        // Seamless Drag/Touch Controls
         window.addEventListener('mousemove', (e) => {
             if (!gameActive) return;
             player.x = Math.min(canvas.width - player.width, Math.max(0, e.clientX - player.width / 2));
@@ -261,10 +280,10 @@
             let emoji = "🎓";
             let type = "good";
 
-            if (rand < 0.25) {
+            if (rand < 0.38) {
                 emoji = "⏰";
                 type = "bad";
-            } else if (rand > 0.88) { // Rare Coffee Spawn
+            } else if (rand > 0.95) { 
                 emoji = "☕";
                 type = "coffee";
             }
@@ -273,17 +292,15 @@
                 x: Math.random() * (canvas.width - 40),
                 y: -40,
                 size: 40,
-                /* Optimized: Slipped item speed from 4-7 down to 2-4.5 for smooth control */
-                speed: Math.random() * 2.5 + 2, 
+                speed: Math.random() * 2.2 + 3.2, 
                 emoji: emoji,
                 type: type
             });
             
-            spawnTimer = setTimeout(spawnItem, Math.random() * 800 + 600); 
+            spawnTimer = setTimeout(spawnItem, Math.random() * 600 + 450); 
         }
 
         function startGame() {
-            // Wake up audio context on interaction
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
@@ -315,11 +332,9 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Render Basket
             ctx.font = "50px serif";
             ctx.fillText(player.emoji, player.x, player.y + 40);
 
-            // Item Engine
             for (let i = items.length - 1; i >= 0; i--) {
                 let item = items[i];
                 item.y += item.speed;
@@ -327,7 +342,6 @@
                 ctx.font = "35px serif";
                 ctx.fillText(item.emoji, item.x, item.y);
 
-                // Collision Detection Box
                 if (item.y >= player.y && item.y <= player.y + player.height &&
                     item.x >= player.x - 20 && item.x <= player.x + player.width) {
                     
