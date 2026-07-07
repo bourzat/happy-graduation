@@ -54,6 +54,12 @@
             margin-bottom: 15px;
         }
 
+        .lose-title {
+            background: linear-gradient(135deg, #f87171, #ef4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
         button {
             background: linear-gradient(45deg, #f59e0b, #d97706);
             color: white;
@@ -70,6 +76,19 @@
 
         button:active {
             transform: scale(0.98);
+        }
+
+        .video-btn {
+            background: linear-gradient(45deg, #ef4444, #dc2626);
+            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.3);
+            display: inline-block;
+            text-decoration: none;
+            color: white;
+            padding: 12px 30px;
+            font-weight: bold;
+            border-radius: 50px;
+            margin-top: 15px;
+            font-size: 1rem;
         }
 
         #hud {
@@ -142,15 +161,26 @@
         <div id="start-screen" class="screen">
             <h1>The Graduation Dash!</h1>
             <p style="font-size: 1.1rem; max-width: 320px; color: #cbd5e1; margin-top: 5px; margin-bottom: 35px; line-height: 1.8; text-align: left; padding-left: 20px;">
-                🎓 Catch caps for <b>+10 pts</b><br>
-                ☕ Catch coffee for a massive <b>+25 pts</b><br>
+                🎓 Catch caps for <b>+5 pts</b><br>
+                ☕ Catch coffee for <b>+10 pts</b><br>
                 ⏰ Avoid alarms! Dynamic deduction <b>-15 pts</b><br>
+                ❌ Dropping below 0 points = Game Over!<br>
                 ✨ Reach 100 points to unlock your note!
             </p>
             <button onclick="startGame()">Start Game</button>
             <p style="color: #64748b; font-size: 0.9rem; margin-top: 25px; font-weight: 500;">
                 ⚡ Drag your finger to move
             </p>
+        </div>
+
+        <div id="lose-screen" class="screen hidden">
+            <h1 class="lose-title">Class Cancelled! ⏰</h1>
+            <p style="font-size: 1.2rem; max-width: 325px; color: #cbd5e1; font-family: Georgia, serif; font-style: italic; line-height: 1.8; margin-bottom: 35px;">
+                "Even when the clocks catch up, Habibty, you never truly lose. Every step back is just you drawing the bow string to launch yourself further. Try again, my love."
+            </p>
+            <button onclick="startGame()" style="background: linear-gradient(45deg, #ef4444, #b91c1c); box-shadow: 0 10px 25px rgba(185, 28, 28, 0.3);">
+                Try Again
+            </button>
         </div>
 
         <div id="victory-screen" class="screen hidden">
@@ -173,6 +203,10 @@
                 <div class="video-container">
                     <iframe src="https://www.youtube.com/embed/450p7goxZqg" allowfullscreen></iframe>
                 </div>
+
+                <a href="https://youtu.be/450p7goxZqg" target="_blank" class="video-btn">
+                    🌹 Play "All of Me" on YouTube
+                </a>
                 
                 <p style="font-size: 1.1rem; line-height: 1.6; text-align: center; color: #f472b6; font-weight: 600; margin-top: 25px; margin-bottom: 0;">
                     Mabrouk, my love! The future is yours. ❤️
@@ -226,6 +260,14 @@
                 gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'lose') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
             } else if (type === 'win') {
                 const notes = [523.25, 659.25, 783.99, 1046.50];
                 notes.forEach((freq, index) => {
@@ -280,10 +322,10 @@
             let emoji = "🎓";
             let type = "good";
 
-            if (rand < 0.38) {
+            if (rand < 0.40) { 
                 emoji = "⏰";
                 type = "bad";
-            } else if (rand > 0.95) { 
+            } else if (rand > 0.94) { 
                 emoji = "☕";
                 type = "coffee";
             }
@@ -292,12 +334,12 @@
                 x: Math.random() * (canvas.width - 40),
                 y: -40,
                 size: 40,
-                speed: Math.random() * 2.2 + 3.2, 
+                speed: Math.random() * 2.2 + 3.5, 
                 emoji: emoji,
                 type: type
             });
             
-            spawnTimer = setTimeout(spawnItem, Math.random() * 600 + 450); 
+            spawnTimer = setTimeout(spawnItem, Math.random() * 500 + 450); 
         }
 
         function startGame() {
@@ -305,11 +347,22 @@
                 audioCtx.resume();
             }
             document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('lose-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
+            
             gameActive = true;
             initGameObjects();
             spawnItem();
             update();
+        }
+
+        function triggerLose() {
+            gameActive = false;
+            clearTimeout(spawnTimer);
+            playSound('lose');
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('lose-screen').classList.remove('hidden');
         }
 
         function triggerWin() {
@@ -346,18 +399,23 @@
                     item.x >= player.x - 20 && item.x <= player.x + player.width) {
                     
                     if (item.type === "good") {
-                        score += 10;
+                        score += 5; 
                         playSound('catch');
                     } else if (item.type === "coffee") {
-                        score += 25;
+                        score += 10; 
                         playSound('coffee');
                     } else {
-                        score = Math.max(0, score - 15); 
+                        score -= 15; 
                         playSound('alarm');
                     }
                     
                     document.getElementById('score').innerText = score;
                     items.splice(i, 1);
+
+                    if (score < 0) {
+                        triggerLose();
+                        return;
+                    }
 
                     if (score >= 100) {
                         triggerWin();
