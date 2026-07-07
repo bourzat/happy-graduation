@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graduate to Win! 🎓</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+   <style>
+        body {
+            background: #0f172a;
+            color: #fff;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            text-align: center;
+            margin: 0;
+            overflow: hidden;
+            /* Prevents phone gestures like pulling down to refresh */
+            overscroll-behavior-y: contain; 
+            /* Stops mobile browsers from highlighting things on double tap */
+            touch-action: none; 
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .screen {
+            position: absolute;
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.98);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 2rem; /* Scaled down for mobile */
+            background: linear-gradient(to right, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        #hud {
+            position: absolute;
+            top: 40px; /* Pushed down slightly to avoid iPhone notches */
+            font-size: 1.3rem;
+            font-weight: bold;
+            z-index: 5;
+            pointer-events: none;
+            width: 100%;
+            text-align: center;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hidden { display: none !important; }
+
+        .note-card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            max-width: 90%;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="hud" class="hidden">Score: <span id="score">0</span> / 100</div>
+
+        <canvas id="canvas"></canvas>
+
+        <div id="start-screen" class="screen">
+            <h1>The Graduation Dash! 🎓</h1>
+            <p style="font-size: 1.2rem; max-width: 400px; color: #94a3b8; margin-bottom: 30px;">
+                Catch the 🎓 to graduate! Avoid the ⏰ (8 AM classes are over!). Reach 100 points to unlock your surprise.
+            </p>
+            <p style="color: #a78bfa; margin-bottom: 20px;">Use Left/Right Arrows or Click/Drag to move</p>
+            <button onclick="startGame()">Start Game</button>
+        </div>
+
+        <div id="victory-screen" class="screen hidden">
+            <h1>🎓 YOU GRADUATED! 🎓</h1>
+            <div class="note-card">
+                <h2>To My Favorite Graduate,</h2>
+                <p style="font-size: 1.2rem; line-height: 1.6; text-align: left;">
+                    You officially caught enough diplomas to graduate! I am so incredibly proud of all the hard work, late nights, and dedication you put into getting here. 
+                </p>
+                <p style="font-size: 1.2rem; line-height: 1.6; text-align: left; color: #f472b6;">
+                    The future looks so bright with you in it. I love you! ❤️
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let score = 0;
+        let gameActive = false;
+        let player, items;
+
+        // Resize canvas to fit screen
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Game objects configuration
+        function initGameObjects() {
+            player = {
+                x: canvas.width / 2 - 40,
+                y: canvas.height - 100,
+                width: 80,
+                height: 50,
+                emoji: "🧺" // You can change this emoji!
+            };
+            items = [];
+            score = 0;
+            document.getElementById('score').innerText = score;
+        }
+
+        // Controls
+        let touchX = null;
+        window.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            if (e.key === 'ArrowLeft') player.x = Math.max(0, player.x - 35);
+            if (e.key === 'ArrowRight') player.x = Math.min(canvas.width - player.width, player.x + 35);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!gameActive) return;
+            player.x = Math.min(canvas.width - player.width, Math.max(0, e.clientX - player.width / 2));
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!gameActive) return;
+            let tX = e.touches[0].clientX;
+            player.x = Math.min(canvas.width - player.width, Math.max(0, tX - player.width / 2));
+        });
+
+        function spawnItem() {
+            if (!gameActive) return;
+            const isCap = Math.random() > 0.3; // 70% chance for a graduation cap, 30% for alarm clock
+            items.push({
+                x: Math.random() * (canvas.width - 40),
+                y: -40,
+                size: 40,
+                speed: Math.random() * 3 + 4,
+                emoji: isCap ? "🎓" : "⏰",
+                type: isCap ? "good" : "bad"
+            });
+            setTimeout(spawnItem, Math.random() * 600 + 400); // Spawn speed variation
+        }
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            gameActive = true;
+            initGameObjects();
+            spawnItem();
+            update();
+        }
+
+        function triggerWin() {
+            gameActive = false;
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('victory-screen').classList.remove('hidden');
+
+            // Awesome Continuous Confetti
+            var end = Date.now() + (6 * 1000);
+            (function frame() {
+                confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 } });
+                confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 } });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Basket / Player
+            ctx.font = "50px serif";
+            ctx.fillText(player.emoji, player.x, player.y + 40);
+
+            // Update & Draw falling objects
+            for (let i = items.length - 1; i >= 0; i--) {
+                let item = items[i];
+                item.y += item.speed;
+
+                // Draw item
+                ctx.font = "35px serif";
+                ctx.fillText(item.emoji, item.x, item.y);
+
+                // Collision detection
+                if (item.y >= player.y && item.y <= player.y + player.height &&
+                    item.x >= player.x - 20 && item.x <= player.x + player.width) {
+                    
+                    if (item.type === "good") {
+                        score += 10;
+                    } else {
+                        score = Math.max(0, score - 15); // Hit by alarm clock! Lose points
+                    }
+                    document.getElementById('score').innerText = score;
+                    items.splice(i, 1);
+
+                    if (score >= 100) {
+                        triggerWin();
+                        return;
+                    }
+                    continue;
+                }
+
+                // Remove missed items
+                if (item.y > canvas.height) {
+                    items.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(update);
+        }
+    </script>
+</body>
+</html>
